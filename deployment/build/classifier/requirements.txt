@@ -1,0 +1,14 @@
+fastapi[standard]
+python-multipart
+dynaconf
+
+pytest==8.3.3
+pytest-mock==3.14.0
+
+uvicorn[standard]
+
+joblib
+PyPDF2
+pytesseract
+requests
+scikit-learn

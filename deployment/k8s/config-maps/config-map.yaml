@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+data:
+  CLASSIFIER_SERVICE_HOST: "http://classifier-service"
+  CLASSIFIER_SERVICE_PORT: "80"
+  CLASSIFIER_SERVICE_ENDPOINT: "classify_file"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: classifier-service-config
+data:
+  CLASSIFIER_SERVICE_DATA_VOLUME: "/mnt/data"
+  CLASSIFIER_SERVICE_MODEL_FILENAME: "naive_bayes_model.pkl"
+  CLASSIFIER_SERVICE_VECTORIZER_FILENAME: "tfidf_vectorizer.pkl"

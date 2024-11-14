@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: classifier-service
+  labels:
+    app: classifier-service
+    release: application
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: classifier-service
+  template:
+    metadata:
+      labels:
+        app: classifier-service
+        release: application
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: classifier-service
+          image: classifier-service:v1
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: model-data
+              mountPath: /mnt/data
+          env:
+            - name: DYNACONF_CLASSIFIER_SERVICE_DATA_VOLUME
+              valueFrom:
+                configMapKeyRef:
+                  name: classifier-service-config
+                  key: CLASSIFIER_SERVICE_DATA_VOLUME
+            - name: DYNACONF_CLASSIFIER_SERVICE_MODEL_FILENAME
+              valueFrom:
+                configMapKeyRef:
+                  name: classifier-service-config
+                  key: CLASSIFIER_SERVICE_MODEL_FILENAME
+            - name: DYNACONF_CLASSIFIER_SERVICE_VECTORIZER_FILENAME
+              valueFrom:
+                configMapKeyRef:
+                  name: classifier-service-config
+                  key: CLASSIFIER_SERVICE_VECTORIZER_FILENAME
+          resources:
+            requests:
+              cpu: "200m" # Request 0.2 CPU cores
+              memory: "256Mi"
+            limits:
+              cpu: "500m" # Limit to 0.5 CPU cores
+              memory: "512Mi"
+      volumes:
+        - name: model-data
+          hostPath:
+            path: /mnt/data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: classifier-service
+spec:
+  selector:
+    app: classifier-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: classifier-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: classifier-service
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

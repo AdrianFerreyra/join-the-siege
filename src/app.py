@@ -1,29 +1,73 @@
-from flask import Flask, request, jsonify
+import requests
 
-from src.classifier import classify_file
+from flask import Flask, request, jsonify
+from werkzeug.datastructures import FileStorage
+
+from src import logging
+from config import settings
+
+
+logger = logging.get_logger(__name__)
+
 app = Flask(__name__)
 
-ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg'}
+CLASSIFIER_CLASSIFY_FILE_URL = (
+    "{host}:{port}/{endpoint}".format(  # pylint: disable=consider-using-f-string
+        host=settings.CLASSIFIER_SERVICE_HOST,
+        port=settings.CLASSIFIER_SERVICE_PORT,
+        endpoint=settings.CLASSIFIER_SERVICE_ENDPOINT,
+    )
+)
+CLASSIFIER_CALL_TIMEOUT = 5
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/classify_file', methods=['POST'])
+class ClassificationError(Exception):
+    def __init__(self, message, error_code):
+        new_message = f"File Classification failed: {message}"
+        super().__init__(new_message)
+        self.error_code = error_code
+
+
+def _validate_request_args(request_param):
+    if "file" not in request_param.files:
+        return {"error": "No file part in the request"}, 400
+
+    file = request_param.files["file"]
+    if file.filename == "":
+        return {"error": "No selected file"}, 400
+
+    return None
+
+
+@app.route("/classify_file", methods=["POST"])
 def classify_file_route():
+    validations = _validate_request_args(request)
+    if validations is not None:
+        return jsonify(validations[0]), validations[1]
 
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part in the request"}), 400
+    file = request.files["file"]
 
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-
-    if not allowed_file(file.filename):
-        return jsonify({"error": f"File type not allowed"}), 400
-
-    file_class = classify_file(file)
-    return jsonify({"file_class": file_class}), 200
+    try:
+        file_class = _classify_file(file)
+        return jsonify({"file_class": file_class}), 200
+    except ClassificationError as e:
+        return jsonify({"error": str(e)}), e.error_code
 
 
-if __name__ == '__main__':
+def _classify_file(file: FileStorage):
+    files = {"file": (file.filename, file.read())}
+    try:
+        response = requests.post(
+            url=CLASSIFIER_CLASSIFY_FILE_URL,
+            files=files,
+            timeout=CLASSIFIER_CALL_TIMEOUT,
+        )
+        if response.ok:
+            return response.json()
+        raise ClassificationError(response.reason, response.status_code)
+    except requests.RequestException as exc:
+        raise ClassificationError("Connection Error", 500) from exc
+
+
+if __name__ == "__main__":
     app.run(debug=True)

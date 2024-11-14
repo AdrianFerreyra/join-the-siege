@@ -1,0 +1,5 @@
+resources:
+  - api
+  - volumes
+  - classifier-service
+  - config-maps

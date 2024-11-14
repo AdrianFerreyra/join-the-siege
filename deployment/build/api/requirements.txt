@@ -1,0 +1,10 @@
+Flask==3.0.3
+
+dynaconf
+
+pytest==8.3.3
+pytest-mock==3.14.0
+
+requests
+
+gunicorn==23.0.0

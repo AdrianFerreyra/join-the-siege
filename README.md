@@ -19,6 +19,7 @@ The communication between the API and Classification Services is done using HTTP
 The system – designed focussing on the [12 Factor App principles](https://12factor.net/) – is ready to be deployed as 2 running processes or to a K8s cluster, as prefered.
 
 ### Considersations
+Due to time limitations, I couldn't implement much monitoring and observability to the system. I would do it using Prometheus to monitor the K8S deployment and add special dashboards and alerts around model precision to trigger retraining.
 
 I decided to leave the original API running in Flask as is, to maintain the original implementation. This could cause a problem since Flask is a WSGI API Framework and could represent a bottleneck if processing times scale. My recommendation is to consider moving this API to a ASGI framework like FastAPI that will allow us to leverage non-preemptive cooperative multitasking when calling the Classification service.
 
@@ -32,6 +33,7 @@ For training purposes, I have decided to run the training code manually and set 
 - CI Workflow for testing and Docker building
 - Using PDF2Image to handle images embeeded in PDFs
 - Multi-language support in TF-IDF.
+- Observability.
 
 ### Part 1: Enhancing the Classifier
 

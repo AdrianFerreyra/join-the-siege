@@ -26,7 +26,7 @@ On volumes, I have decided to use PermanentVolume mounting to share the model ac
 
 For training purposes, I have decided to run the training code manually and set the model in the mounted folder myself. It could be possible to retrain the model based on certain signals, or periodically. Also, I'd consider monitoring the model efficiency to decide on this.
 
-### Potential Further Enhancements:
+### Potential Further Enhancements:
 
 - Generate Synthethic data using big LLMs like Anthopic's or OpenAI's.
 - CI Workflow for testing and Docker building
